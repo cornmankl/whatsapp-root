@@ -1,0 +1,1566 @@
+openapi: 3.0.0
+info:
+  title: WhatsApp Automation Bot API
+  description: Production-ready WhatsApp automation bot system with API-like features powered by Playwright
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+  - url: https://your-domain.com/api
+    description: Production server
+
+security:
+  - ApiKeyAuth: []
+  - BearerAuth: []
+
+securitySchemes:
+  ApiKeyAuth:
+    type: apiKey
+    in: header
+    name: Authorization
+    description: "Use format: 'ApiKey YOUR_API_KEY'"
+  BearerAuth:
+    type: http
+    scheme: bearer
+    bearerFormat: JWT
+    description: "Use format: 'Bearer YOUR_JWT_TOKEN'"
+
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login to get JWT token
+      description: Authenticate using API key to receive JWT token for subsequent requests
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - apiKey
+              properties:
+                apiKey:
+                  type: string
+                  description: Your API key
+                  example: "your-secret-api-key-here"
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  token:
+                    type: string
+                    description: JWT token
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: "admin"
+                      role:
+                        type: string
+                        example: "admin"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/verify:
+    post:
+      tags:
+        - Authentication
+      summary: Verify JWT token
+      description: Verify if a JWT token is still valid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  description: JWT token to verify
+      responses:
+        '200':
+          description: Token is valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      role:
+                        type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /messages:
+    get:
+      tags:
+        - Messages
+      summary: Get messages with pagination and filtering
+      description: Retrieve messages with optional filtering and pagination
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/ChatIdParam'
+        - $ref: '#/components/parameters/SenderIdParam'
+        - $ref: '#/components/parameters/IsGroupParam'
+        - $ref: '#/components/parameters/MessageTypeParam'
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Messages retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Message'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /messages/stats:
+    get:
+      tags:
+        - Messages
+      summary: Get message statistics
+      description: Retrieve various statistics about messages
+      responses:
+        '200':
+          description: Statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      total_messages:
+                        type: integer
+                        example: 1500
+                      received_messages:
+                        type: integer
+                        example: 800
+                      sent_messages:
+                        type: integer
+                        example: 700
+                      group_messages:
+                        type: integer
+                        example: 400
+                      personal_messages:
+                        type: integer
+                        example: 1100
+                      unique_chats:
+                        type: integer
+                        example: 50
+                      unique_senders:
+                        type: integer
+                        example: 30
+                      messageTypes:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            message_type:
+                              type: string
+                            count:
+                              type: integer
+                      dailyMessages:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            date:
+                              type: string
+                              format: date
+                            count:
+                              type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /whatsapp/send:
+    post:
+      tags:
+        - WhatsApp
+      summary: Send message
+      description: Send a text or media message to a recipient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - recipient
+              properties:
+                recipient:
+                  type: string
+                  description: Phone number or contact name
+                  example: "1234567890"
+                content:
+                  type: string
+                  description: Message content (required if mediaUrl not provided)
+                  example: "Hello from WhatsApp Bot!"
+                mediaUrl:
+                  type: string
+                  format: uri
+                  description: URL of media file (required if content not provided)
+                  example: "https://example.com/image.jpg"
+                mediaType:
+                  type: string
+                  description: Type of media (required if mediaUrl provided)
+                  enum: [image, video, audio, document, sticker]
+                  example: "image"
+                priority:
+                  type: string
+                  description: Message priority
+                  enum: [low, normal, high]
+                  default: "normal"
+                  example: "normal"
+      responses:
+        '200':
+          description: Message queued successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Message queued successfully"
+                  data:
+                    type: object
+                    properties:
+                      jobId:
+                        type: string
+                        example: "550e8400-e29b-41d4-a716-446655440000"
+                      status:
+                        type: string
+                        example: "queued"
+                      estimatedProcessingTime:
+                        type: string
+                        format: date-time
+                        example: "2024-01-01T12:00:00.000Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /whatsapp/send/text:
+    post:
+      tags:
+        - WhatsApp
+      summary: Send text message
+      description: Send a text message to a recipient (simplified endpoint)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - recipient
+                - content
+              properties:
+                recipient:
+                  type: string
+                  description: Phone number or contact name
+                  example: "1234567890"
+                content:
+                  type: string
+                  description: Message content
+                  example: "Hello from WhatsApp Bot!"
+                priority:
+                  type: string
+                  description: Message priority
+                  enum: [low, normal, high]
+                  default: "normal"
+      responses:
+        '200':
+          description: Text message queued successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Text message queued successfully"
+                  data:
+                    type: object
+                    properties:
+                      jobId:
+                        type: string
+                      status:
+                        type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /whatsapp/qr:
+    get:
+      tags:
+        - WhatsApp
+      summary: Get QR code
+      description: Get QR code for WhatsApp login
+      responses:
+        '200':
+          description: QR code retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: string
+                    format: byte
+                    description: Base64 encoded QR code image
+                    example: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
+        '404':
+          description: QR code not available
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /whatsapp/session/status:
+    get:
+      tags:
+        - WhatsApp
+      summary: Get session status
+      description: Get current WhatsApp session status
+      responses:
+        '200':
+          description: Session status retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        enum: [connected, disconnected, waiting_for_qr, not_initialized, error]
+                        example: "connected"
+                      timestamp:
+                        type: string
+                        format: date-time
+                        example: "2024-01-01T12:00:00.000Z"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /whatsapp/session/reconnect:
+    post:
+      tags:
+        - WhatsApp
+      summary: Reconnect session
+      description: Manually reconnect WhatsApp session
+      responses:
+        '200':
+          description: Session reconnected successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Session reconnected successfully"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /queue:
+    get:
+      tags:
+        - Queue
+      summary: Get queue jobs
+      description: Get queue jobs with pagination and filtering
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/StatusParam'
+        - $ref: '#/components/parameters/JobTypeParam'
+      responses:
+        '200':
+          description: Queue jobs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/QueueJob'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /queue/stats:
+    get:
+      tags:
+        - Queue
+      summary: Get queue statistics
+      description: Get queue processing statistics
+      responses:
+        '200':
+          description: Queue statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      counts:
+                        type: object
+                        properties:
+                          waiting:
+                            type: integer
+                          active:
+                            type: integer
+                          completed:
+                            type: integer
+                          failed:
+                            type: integer
+                      waiting:
+                        type: integer
+                      active:
+                        type: integer
+                      completed:
+                        type: integer
+                      failed:
+                        type: integer
+                      recentFailed:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/FailedJob'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /queue/{id}/retry:
+    post:
+      tags:
+        - Queue
+      summary: Retry failed job
+      description: Retry a failed queue job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Job ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job retried successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Job retried successfully"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /queue/{id}/cancel:
+    post:
+      tags:
+        - Queue
+      summary: Cancel job
+      description: Cancel a queue job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Job ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job cancelled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Job cancelled successfully"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /queue/pause:
+    post:
+      tags:
+        - Queue
+      summary: Pause queue
+      description: Pause queue processing
+      responses:
+        '200':
+          description: Queue paused successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Queue paused successfully"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /queue/resume:
+    post:
+      tags:
+        - Queue
+      summary: Resume queue
+      description: Resume queue processing
+      responses:
+        '200':
+          description: Queue resumed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Queue resumed successfully"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /webhook:
+    get:
+      tags:
+        - Webhooks
+      summary: Get webhooks
+      description: Get all registered webhooks
+      responses:
+        '200':
+          description: Webhooks retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Webhook'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /webhook/register:
+    post:
+      tags:
+        - Webhooks
+      summary: Register webhook
+      description: Register a new webhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - url
+                - events
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  description: Webhook URL
+                  example: "https://your-webhook-url.com/whatsapp"
+                events:
+                  type: array
+                  description: Events to subscribe to
+                  items:
+                    type: string
+                    enum: [message.new, message.sent, session.connected, session.disconnected]
+                  example: ["message.new", "message.sent"]
+                secret:
+                  type: string
+                  description: Webhook secret for verification
+                  example: "your-webhook-secret"
+      responses:
+        '201':
+          description: Webhook registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Webhook registered successfully"
+                  webhookId:
+                    type: integer
+                    example: 1
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /webhook/unregister/{id}:
+    delete:
+      tags:
+        - Webhooks
+      summary: Unregister webhook
+      description: Unregister a webhook
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Webhook ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Webhook unregistered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Webhook unregistered successfully"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /webhook/test:
+    post:
+      tags:
+        - Webhooks
+      summary: Test webhook
+      description: Test a webhook endpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - url
+                - event
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  description: Webhook URL to test
+                  example: "https://your-webhook-url.com/whatsapp"
+                event:
+                  type: string
+                  description: Event to test
+                  example: "message.new"
+                secret:
+                  type: string
+                  description: Webhook secret
+                  example: "your-webhook-secret"
+      responses:
+        '200':
+          description: Webhook test completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Webhook test sent successfully"
+                  response:
+                    type: object
+                    properties:
+                      status:
+                        type: integer
+                        example: 200
+                      statusText:
+                        type: string
+                        example: "OK"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /templates:
+    get:
+      tags:
+        - Templates
+      summary: Get templates
+      description: Get all message templates
+      responses:
+        '200':
+          description: Templates retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Template'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /templates:
+    post:
+      tags:
+        - Templates
+      summary: Create template
+      description: Create a new message template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - content
+              properties:
+                name:
+                  type: string
+                  description: Template name
+                  example: "Welcome Message"
+                content:
+                  type: string
+                  description: Template content
+                  example: "Hello {name}, welcome to our service!"
+                description:
+                  type: string
+                  description: Template description
+                  example: "Welcome message for new users"
+      responses:
+        '201':
+          description: Template created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Template created successfully"
+                  templateId:
+                    type: integer
+                    example: 1
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /templates/{id}:
+    put:
+      tags:
+        - Templates
+      summary: Update template
+      description: Update an existing template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Template ID
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - content
+              properties:
+                name:
+                  type: string
+                  description: Template name
+                content:
+                  type: string
+                  description: Template content
+                description:
+                  type: string
+                  description: Template description
+      responses:
+        '200':
+          description: Template updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Template updated successfully"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /templates/{id}:
+    delete:
+      tags:
+        - Templates
+      summary: Delete template
+      description: Delete a template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Template ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Template deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Template deleted successfully"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /ai/stats:
+    get:
+      tags:
+        - AI
+      summary: Get AI statistics
+      description: Get AI system statistics
+      responses:
+        '200':
+          description: AI statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      enabled:
+                        type: boolean
+                        example: true
+                      model:
+                        type: string
+                        example: "gpt-4o-mini"
+                      totalConversations:
+                        type: integer
+                        example: 25
+                      totalMessages:
+                        type: integer
+                        example: 150
+                      configuration:
+                        type: object
+                        properties:
+                          maxTokens:
+                            type: integer
+                            example: 150
+                          temperature:
+                            type: number
+                            example: 0.7
+                          maxHistoryLength:
+                            type: integer
+                            example: 10
+                          responseDelay:
+                            type: integer
+                            example: 5000
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /ai/config:
+    get:
+      tags:
+        - AI
+      summary: Get AI configuration
+      description: Get current AI configuration
+      responses:
+        '200':
+          description: AI configuration retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/AIConfig'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /ai/config:
+    put:
+      tags:
+        - AI
+      summary: Update AI configuration
+      description: Update AI system configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIConfig'
+      responses:
+        '200':
+          description: AI configuration updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "AI configuration updated successfully"
+                  data:
+                    $ref: '#/components/schemas/AIConfig'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /ai/test:
+    post:
+      tags:
+        - AI
+      summary: Test AI connection
+      description: Test AI system connection
+      responses:
+        '200':
+          description: AI test completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                      message:
+                        type: string
+                        example: "AI connection successful"
+                      response:
+                        type: string
+                        example: "Hello! I'm working properly."
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /ai/history:
+    delete:
+      tags:
+        - AI
+      summary: Clear conversation history
+      description: Clear AI conversation history
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                chatId:
+                  type: string
+                  description: Specific chat ID to clear (optional, clears all if not provided)
+      responses:
+        '200':
+          description: Conversation history cleared successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Conversation history cleared successfully"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /ai/generate:
+    post:
+      tags:
+        - AI
+      summary: Generate AI response
+      description: Generate AI response for a given prompt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - prompt
+              properties:
+                prompt:
+                  type: string
+                  description: Prompt for AI to respond to
+                  example: "Hello, how are you?"
+                chatId:
+                  type: string
+                  description: Chat ID for context
+                  example: "chat123"
+                senderName:
+                  type: string
+                  description: Sender name for context
+                  example: "John Doe"
+                isGroup:
+                  type: boolean
+                  description: Whether this is a group chat
+                  example: false
+                options:
+                  type: object
+                  properties:
+                    model:
+                      type: string
+                      example: "gpt-4o-mini"
+                    maxTokens:
+                      type: integer
+                      example: 100
+                    temperature:
+                      type: number
+                      example: 0.7
+      responses:
+        '200':
+          description: AI response generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/AIResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /health:
+    get:
+      tags:
+        - System
+      summary: Health check
+      description: System health check endpoint
+      responses:
+        '200':
+          description: System is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2024-01-01T12:00:00.000Z"
+                  uptime:
+                    type: number
+                    example: 3600.123
+                  environment:
+                    type: string
+                    example: "production"
+
+components:
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      description: Page number
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    LimitParam:
+      name: limit
+      in: query
+      description: Number of items per page
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 50
+    ChatIdParam:
+      name: chatId
+      in: query
+      description: Filter by chat ID
+      required: false
+      schema:
+        type: string
+    SenderIdParam:
+      name: senderId
+      in: query
+      description: Filter by sender ID
+      required: false
+      schema:
+        type: string
+    IsGroupParam:
+      name: isGroup
+      in: query
+      description: Filter by group chat
+      required: false
+      schema:
+        type: boolean
+    MessageTypeParam:
+      name: messageType
+      in: query
+      description: Filter by message type
+      required: false
+      schema:
+        type: string
+    StartDateParam:
+      name: startDate
+      in: query
+      description: Filter by start date
+      required: false
+      schema:
+        type: string
+        format: date-time
+    EndDateParam:
+      name: endDate
+      in: query
+      description: Filter by end date
+      required: false
+      schema:
+        type: string
+        format: date-time
+    StatusParam:
+      name: status
+      in: query
+      description: Filter by job status
+      required: false
+      schema:
+        type: string
+        enum: [pending, active, completed, failed, cancelled]
+    JobTypeParam:
+      name: jobType
+      in: query
+      description: Filter by job type
+      required: false
+      schema:
+        type: string
+        enum: [send_message, send_media, send_template]
+
+  schemas:
+    Message:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        message_id:
+          type: string
+          example: "wamid.HbLqX5Th9t2AAB..."
+        chat_id:
+          type: string
+          example: "1234567890@s.whatsapp.net"
+        chat_name:
+          type: string
+          example: "John Doe"
+        sender_id:
+          type: string
+          example: "1234567890@s.whatsapp.net"
+        sender_name:
+          type: string
+          example: "John Doe"
+        message_type:
+          type: string
+          enum: [text, image, video, audio, document, sticker, contact, location]
+          example: "text"
+        content:
+          type: string
+          example: "Hello there!"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2024-01-01T12:00:00.000Z"
+        is_from_me:
+          type: boolean
+          example: false
+        is_group:
+          type: boolean
+          example: false
+        media_url:
+          type: string
+          format: uri
+          example: "https://mmg.whatsapp.net/d/f/..."
+        media_type:
+          type: string
+          example: "image"
+        media_size:
+          type: integer
+          example: 102400
+        thumbnail_url:
+          type: string
+          format: uri
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-01T12:00:00.000Z"
+
+    QueueJob:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        job_id:
+          type: string
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        job_type:
+          type: string
+          enum: [send_message, send_media, send_template]
+          example: "send_message"
+        status:
+          type: string
+          enum: [pending, active, completed, failed, cancelled]
+          example: "pending"
+        recipient:
+          type: string
+          example: "1234567890"
+        content:
+          type: string
+          example: "Hello from WhatsApp Bot!"
+        media_url:
+          type: string
+          format: uri
+        media_type:
+          type: string
+        retry_count:
+          type: integer
+          example: 0
+        error_message:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-01T12:00:00.000Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-01-01T12:00:00.000Z"
+
+    FailedJob:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        failedReason:
+          type: string
+        timestamp:
+          type: integer
+
+    Webhook:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        url:
+          type: string
+          format: uri
+          example: "https://your-webhook-url.com/whatsapp"
+        events:
+          type: array
+          items:
+            type: string
+          example: ["message.new", "message.sent"]
+        is_active:
+          type: boolean
+          example: true
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-01T12:00:00.000Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-01-01T12:00:00.000Z"
+
+    Template:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Welcome Message"
+        content:
+          type: string
+          example: "Hello {name}, welcome to our service!"
+        description:
+          type: string
+          example: "Welcome message for new users"
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-01T12:00:00.000Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-01-01T12:00:00.000Z"
+
+    AIConfig:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          example: true
+        model:
+          type: string
+          example: "glm-4.5"
+        maxTokens:
+          type: integer
+          example: 150
+        temperature:
+          type: number
+          example: 0.7
+        systemPrompt:
+          type: string
+          example: "Anda adalah asisten yang membantu. Respon dengan membantu dan ringkas."
+        responseDelay:
+          type: integer
+          example: 5000
+        maxHistoryLength:
+          type: integer
+          example: 10
+
+    AIResponse:
+      type: object
+      properties:
+        content:
+          type: string
+          example: "Hello! I'm doing well, thank you for asking. How can I help you today?"
+        confidence:
+          type: number
+          example: 0.95
+        timestamp:
+          type: string
+          format: date-time
+          example: "2024-01-01T12:00:00.000Z"
+        error:
+          type: string
+          example: "Error message if any"
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 50
+        total:
+          type: integer
+          example: 1000
+        totalPages:
+          type: integer
+          example: 20
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+                example: "Validation failed"
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    field:
+                      type: string
+                    message:
+                      type: string
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+                example: "Invalid or expired token"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+                example: "Resource not found"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+                example: "Internal server error"

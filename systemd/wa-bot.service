@@ -1,0 +1,17 @@
+[Unit]
+Description=WhatsApp Bot Service
+After=network.target
+
+[Service]
+Type=simple
+User=whatsapp
+WorkingDirectory=/opt/whatsapp-bot
+ExecStart=/opt/whatsapp-bot/systemd/start-xvfb.sh
+Restart=always
+RestartSec=10
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=DISPLAY=:99
+
+[Install]
+WantedBy=multi-user.target

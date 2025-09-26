@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Bot Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .sidebar {
+            transition: all 0.3s ease;
+        }
+        .sidebar.collapsed {
+            width: 4rem;
+        }
+        .sidebar.collapsed .sidebar-text {
+            display: none;
+        }
+        .content {
+            transition: all 0.3s ease;
+        }
+        .message-bubble {
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+        .message-bubble.sent {
+            background-color: #dcf8c6;
+            margin-left: auto;
+        }
+        .message-bubble.received {
+            background-color: #f1f0f0;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-connected {
+            background-color: #10b981;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+        }
+        .status-disconnected {
+            background-color: #ef4444;
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+        }
+        .status-waiting {
+            background-color: #f59e0b;
+            box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3);
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Main Container -->
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div id="sidebar" class="sidebar w-64 bg-white shadow-lg flex flex-col">
+            <div class="p-4 border-b">
+                <h1 class="text-xl font-bold text-gray-800">
+                    <i class="fab fa-whatsapp text-green-500 mr-2"></i>
+                    <span class="sidebar-text">WhatsApp Bot</span>
+                </h1>
+            </div>
+            
+            <nav class="flex-1 p-4">
+                <ul class="space-y-2">
+                    <li>
+                        <a href="#" class="nav-link flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100" data-page="dashboard">
+                            <i class="fas fa-tachometer-alt w-5"></i>
+                            <span class="sidebar-text ml-3">Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100" data-page="session">
+                            <i class="fas fa-qrcode w-5"></i>
+                            <span class="sidebar-text ml-3">Session</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100" data-page="messages">
+                            <i class="fas fa-comments w-5"></i>
+                            <span class="sidebar-text ml-3">Messages</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100" data-page="send">
+                            <i class="fas fa-paper-plane w-5"></i>
+                            <span class="sidebar-text ml-3">Send Message</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100" data-page="queue">
+                            <i class="fas fa-tasks w-5"></i>
+                            <span class="sidebar-text ml-3">Queue</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100" data-page="webhooks">
+                            <i class="fas fa-webhook w-5"></i>
+                            <span class="sidebar-text ml-3">Webhooks</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100" data-page="ai">
+                            <i class="fas fa-robot w-5"></i>
+                            <span class="sidebar-text ml-3">AI Settings</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            
+            <div class="p-4 border-t">
+                <button id="logoutBtn" class="w-full flex items-center p-2 text-red-600 rounded-lg hover:bg-red-50">
+                    <i class="fas fa-sign-out-alt w-5"></i>
+                    <span class="sidebar-text ml-3">Logout</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="content flex-1 flex flex-col">
+            <!-- Header -->
+            <header class="bg-white shadow-sm border-b px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <button id="sidebarToggle" class="mr-4 text-gray-600 hover:text-gray-800">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <h2 id="pageTitle" class="text-2xl font-semibold text-gray-800">Dashboard</h2>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center">
+                            <span id="connectionStatus" class="status-indicator status-disconnected"></span>
+                            <span id="connectionText" class="text-sm text-gray-600">Disconnected</span>
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            <span id="currentTime"></span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Page Content -->
+            <main class="flex-1 overflow-y-auto p-6">
+                <!-- Dashboard Page -->
+                <div id="dashboardPage" class="page-content">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <!-- Stats Cards -->
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                                    <i class="fas fa-comments text-2xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Total Messages</p>
+                                    <p id="totalMessages" class="text-2xl font-semibold text-gray-900">0</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-green-100 text-green-600">
+                                    <i class="fas fa-check-circle text-2xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Queue Completed</p>
+                                    <p id="queueCompleted" class="text-2xl font-semibold text-gray-900">0</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                                    <i class="fas fa-clock text-2xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Queue Pending</p>
+                                    <p id="queuePending" class="text-2xl font-semibold text-gray-900">0</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-red-100 text-red-600">
+                                    <i class="fas fa-exclamation-circle text-2xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Queue Failed</p>
+                                    <p id="queueFailed" class="text-2xl font-semibold text-gray-900">0</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Messages -->
+                    <div class="bg-white rounded-lg shadow">
+                        <div class="px-6 py-4 border-b">
+                            <h3 class="text-lg font-semibold text-gray-800">Recent Messages</h3>
+                        </div>
+                        <div class="p-6">
+                            <div id="recentMessages" class="space-y-4">
+                                <!-- Messages will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Session Page -->
+                <div id="sessionPage" class="page-content hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- QR Code Section -->
+                        <div class="bg-white rounded-lg shadow">
+                            <div class="px-6 py-4 border-b">
+                                <h3 class="text-lg font-semibold text-gray-800">QR Code</h3>
+                            </div>
+                            <div class="p-6">
+                                <div id="qrCodeContainer" class="flex justify-center items-center h-64 bg-gray-50 rounded-lg">
+                                    <div class="text-center">
+                                        <i class="fas fa-qrcode text-6xl text-gray-300 mb-4"></i>
+                                        <p class="text-gray-500">QR code will appear here</p>
+                                    </div>
+                                </div>
+                                <div class="mt-4 flex justify-center space-x-4">
+                                    <button id="refreshQRBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                                    </button>
+                                    <button id="reconnectBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                                        <i class="fas fa-plug mr-2"></i>Reconnect
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Session Info -->
+                        <div class="bg-white rounded-lg shadow">
+                            <div class="px-6 py-4 border-b">
+                                <h3 class="text-lg font-semibold text-gray-800">Session Information</h3>
+                            </div>
+                            <div class="p-6">
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Status</label>
+                                        <div class="mt-1 flex items-center">
+                                            <span id="sessionStatusIndicator" class="status-indicator status-disconnected"></span>
+                                            <span id="sessionStatusText" class="text-sm text-gray-600">Disconnected</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Session ID</label>
+                                        <p id="sessionId" class="mt-1 text-sm text-gray-900">main</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Last Activity</label>
+                                        <p id="lastActivity" class="mt-1 text-sm text-gray-900">Never</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Reconnect Attempts</label>
+                                        <p id="reconnectAttempts" class="mt-1 text-sm text-gray-900">0</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Messages Page -->
+                <div id="messagesPage" class="page-content hidden">
+                    <div class="bg-white rounded-lg shadow">
+                        <div class="px-6 py-4 border-b">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-lg font-semibold text-gray-800">Messages</h3>
+                                <div class="flex items-center space-x-4">
+                                    <input type="text" id="searchMessages" placeholder="Search messages..." class="px-3 py-2 border rounded-lg text-sm">
+                                    <select id="filterMessages" class="px-3 py-2 border rounded-lg text-sm">
+                                        <option value="all">All Messages</option>
+                                        <option value="personal">Personal</option>
+                                        <option value="group">Group</option>
+                                        <option value="sent">Sent</option>
+                                        <option value="received">Received</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <div id="messagesList" class="space-y-4">
+                                <!-- Messages will be loaded here -->
+                            </div>
+                            <div id="messagesPagination" class="mt-6 flex justify-center">
+                                <!-- Pagination will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Send Message Page -->
+                <div id="sendPage" class="page-content hidden">
+                    <div class="max-w-2xl mx-auto">
+                        <div class="bg-white rounded-lg shadow">
+                            <div class="px-6 py-4 border-b">
+                                <h3 class="text-lg font-semibold text-gray-800">Send Message</h3>
+                            </div>
+                            <div class="p-6">
+                                <form id="sendMessageForm">
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Recipient</label>
+                                        <input type="text" id="recipient" class="w-full px-3 py-2 border rounded-lg" placeholder="Enter phone number or contact name" required>
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Message Type</label>
+                                        <select id="messageType" class="w-full px-3 py-2 border rounded-lg">
+                                            <option value="text">Text Message</option>
+                                            <option value="media">Media Message</option>
+                                            <option value="template">Template</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div id="textMessageSection" class="mb-4">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                                        <textarea id="messageContent" rows="4" class="w-full px-3 py-2 border rounded-lg" placeholder="Enter your message..." required></textarea>
+                                    </div>
+                                    
+                                    <div id="mediaMessageSection" class="mb-4 hidden">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Media File</label>
+                                        <input type="file" id="mediaFile" class="w-full px-3 py-2 border rounded-lg" accept="image/*,video/*,audio/*,.pdf,.doc,.docx">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2 mt-4">Caption (optional)</label>
+                                        <textarea id="mediaCaption" rows="2" class="w-full px-3 py-2 border rounded-lg" placeholder="Enter caption..."></textarea>
+                                    </div>
+                                    
+                                    <div id="templateSection" class="mb-4 hidden">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Template</label>
+                                        <select id="templateSelect" class="w-full px-3 py-2 border rounded-lg">
+                                            <option value="">Choose a template...</option>
+                                        </select>
+                                        <div id="templatePreview" class="mt-4 p-4 bg-gray-50 rounded-lg hidden">
+                                            <h4 class="font-medium text-gray-700 mb-2">Preview:</h4>
+                                            <p id="templatePreviewText" class="text-sm text-gray-600"></p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex justify-end">
+                                        <button type="submit" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                                            <i class="fas fa-paper-plane mr-2"></i>Send Message
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Queue Page -->
+                <div id="queuePage" class="page-content hidden">
+                    <div class="bg-white rounded-lg shadow">
+                        <div class="px-6 py-4 border-b">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-lg font-semibold text-gray-800">Queue Management</h3>
+                                <div class="flex items-center space-x-4">
+                                    <button id="pauseQueueBtn" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
+                                        <i class="fas fa-pause mr-2"></i>Pause
+                                    </button>
+                                    <button id="resumeQueueBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                                        <i class="fas fa-play mr-2"></i>Resume
+                                    </button>
+                                    <button id="cleanQueueBtn" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                                        <i class="fas fa-trash mr-2"></i>Clean
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <div id="queueList" class="space-y-4">
+                                <!-- Queue jobs will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Webhooks Page -->
+                <div id="webhooksPage" class="page-content hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Webhook List -->
+                        <div class="bg-white rounded-lg shadow">
+                            <div class="px-6 py-4 border-b">
+                                <h3 class="text-lg font-semibold text-gray-800">Registered Webhooks</h3>
+                            </div>
+                            <div class="p-6">
+                                <div id="webhookList" class="space-y-4">
+                                    <!-- Webhooks will be loaded here -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Add Webhook -->
+                        <div class="bg-white rounded-lg shadow">
+                            <div class="px-6 py-4 border-b">
+                                <h3 class="text-lg font-semibold text-gray-800">Add Webhook</h3>
+                            </div>
+                            <div class="p-6">
+                                <form id="addWebhookForm">
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">URL</label>
+                                        <input type="url" id="webhookUrl" class="w-full px-3 py-2 border rounded-lg" placeholder="https://your-webhook-url.com" required>
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Events</label>
+                                        <div class="space-y-2">
+                                            <label class="flex items-center">
+                                                <input type="checkbox" value="message.new" class="webhook-event mr-2">
+                                                <span class="text-sm">New Message</span>
+                                            </label>
+                                            <label class="flex items-center">
+                                                <input type="checkbox" value="message.sent" class="webhook-event mr-2">
+                                                <span class="text-sm">Message Sent</span>
+                                            </label>
+                                            <label class="flex items-center">
+                                                <input type="checkbox" value="session.connected" class="webhook-event mr-2">
+                                                <span class="text-sm">Session Connected</span>
+                                            </label>
+                                            <label class="flex items-center">
+                                                <input type="checkbox" value="session.disconnected" class="webhook-event mr-2">
+                                                <span class="text-sm">Session Disconnected</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Secret (optional)</label>
+                                        <input type="text" id="webhookSecret" class="w-full px-3 py-2 border rounded-lg" placeholder="Webhook secret for verification">
+                                    </div>
+                                    
+                                    <div class="flex justify-end">
+                                        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                            <i class="fas fa-plus mr-2"></i>Add Webhook
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- AI Settings Page -->
+                <div id="aiPage" class="page-content hidden">
+                    <div class="max-w-4xl mx-auto">
+                        <div class="bg-white rounded-lg shadow">
+                            <div class="px-6 py-4 border-b">
+                                <h3 class="text-lg font-semibold text-gray-800">AI Settings</h3>
+                            </div>
+                            <div class="p-6">
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <!-- AI Configuration -->
+                                    <div>
+                                        <h4 class="font-medium text-gray-700 mb-4">Configuration</h4>
+                                        <form id="aiConfigForm">
+                                            <div class="mb-4">
+                                                <label class="flex items-center">
+                                                    <input type="checkbox" id="aiEnabled" class="mr-2">
+                                                    <span class="text-sm font-medium text-gray-700">Enable AI</span>
+                                                </label>
+                                            </div>
+                                            
+                                            <div class="mb-4">
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Model</label>
+                                                <select id="aiModel" class="w-full px-3 py-2 border rounded-lg">
+                                                    <option value="glm-4.5">GLM-4.5</option>
+                                                    <option value="glm-4">GLM-4</option>
+                                                    <option value="glm-3-turbo">GLM-3 Turbo</option>
+                                                </select>
+                                            </div>
+                                            
+                                            <div class="mb-4">
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Max Tokens</label>
+                                                <input type="number" id="aiMaxTokens" class="w-full px-3 py-2 border rounded-lg" value="150" min="1" max="500">
+                                            </div>
+                                            
+                                            <div class="mb-4">
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Temperature</label>
+                                                <input type="range" id="aiTemperature" class="w-full" min="0" max="1" step="0.1" value="0.7">
+                                                <span id="aiTemperatureValue" class="text-sm text-gray-600">0.7</span>
+                                            </div>
+                                            
+                                            <div class="mb-4">
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">System Prompt</label>
+                                                <textarea id="aiSystemPrompt" rows="3" class="w-full px-3 py-2 border rounded-lg">Anda adalah asisten yang membantu. Respon dengan membantu dan ringkas.</textarea>
+                                            </div>
+                                            
+                                            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                                <i class="fas fa-save mr-2"></i>Save Configuration
+                                            </button>
+                                        </form>
+                                    </div>
+                                    
+                                    <!-- AI Status -->
+                                    <div>
+                                        <h4 class="font-medium text-gray-700 mb-4">Status</h4>
+                                        <div class="space-y-4">
+                                            <div class="p-4 bg-gray-50 rounded-lg">
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <span class="text-sm font-medium text-gray-700">Connection Status</span>
+                                                    <span id="aiConnectionStatus" class="status-indicator status-disconnected"></span>
+                                                </div>
+                                                <p id="aiConnectionText" class="text-sm text-gray-600">Not connected</p>
+                                            </div>
+                                            
+                                            <div class="p-4 bg-gray-50 rounded-lg">
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <span class="text-sm font-medium text-gray-700">Active Conversations</span>
+                                                    <span id="aiActiveConversations" class="text-sm font-medium text-gray-900">0</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="p-4 bg-gray-50 rounded-lg">
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <span class="text-sm font-medium text-gray-700">Total Messages Processed</span>
+                                                    <span id="aiTotalMessages" class="text-sm font-medium text-gray-900">0</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <button id="testAIBtn" class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                                                <i class="fas fa-flask mr-2"></i>Test AI Connection
+                                            </button>
+                                            
+                                            <button id="clearHistoryBtn" class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                                                <i class="fas fa-trash mr-2"></i>Clear Conversation History
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Toast Container -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    
+    <!-- Modal -->
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 id="modalTitle" class="text-lg font-semibold text-gray-800"></h3>
+                <button id="modalClose" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="modalContent" class="text-gray-600"></div>
+            <div id="modalActions" class="mt-6 flex justify-end space-x-3"></div>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>

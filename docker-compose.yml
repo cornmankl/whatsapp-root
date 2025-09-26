@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # WhatsApp Bot
+  whatsapp-bot:
+    build: .
+    container_name: whatsapp-bot
+    restart: unless-stopped
+    depends_on:
+      - redis
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DB_PATH=/app/storage/database.sqlite
+      - BROWSER_STORAGE_PATH=/app/storage/browser
+      - UPLOAD_PATH=/app/storage/uploads
+      - LOG_FILE_PATH=/app/logs/app.log
+    volumes:
+      - ./storage:/app/storage
+      - ./logs:/app/logs
+    ports:
+      - "3000:3000"
+    networks:
+      - whatsapp-network
+
+  # Redis for BullMQ
+  redis:
+    image: redis:7-alpine
+    container_name: whatsapp-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - whatsapp-network
+
+  # Nginx (optional - for production)
+  nginx:
+    image: nginx:alpine
+    container_name: whatsapp-nginx
+    restart: unless-stopped
+    depends_on:
+      - whatsapp-bot
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    networks:
+      - whatsapp-network
+    profiles:
+      - nginx
+
+volumes:
+  redis_data:
+
+networks:
+  whatsapp-network:
+    driver: bridge

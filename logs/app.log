@@ -1,0 +1,12 @@
+{"level":"info","message":"Using in-memory storage (demo mode)","service":"whatsapp-bot","timestamp":"2025-09-26T13:46:26.049Z"}
+{"level":"info","message":"Database tables created successfully","service":"whatsapp-bot","timestamp":"2025-09-26T13:46:26.052Z"}
+{"level":"info","message":"Database initialized successfully","service":"whatsapp-bot","timestamp":"2025-09-26T13:46:26.052Z"}
+{"level":"info","message":"Queue system initialized successfully","service":"whatsapp-bot","timestamp":"2025-09-26T13:46:26.053Z"}
+{"level":"info","message":"AI system initialized successfully","service":"whatsapp-bot","timestamp":"2025-09-26T13:46:26.066Z"}
+{"level":"info","message":"WhatsApp bot initialized (mock mode for serverless)","service":"whatsapp-bot","timestamp":"2025-09-26T13:46:26.067Z"}
+{"level":"info","message":"Using in-memory storage (demo mode)","service":"whatsapp-bot","timestamp":"2025-09-26T13:46:50.532Z"}
+{"level":"info","message":"Database tables created successfully","service":"whatsapp-bot","timestamp":"2025-09-26T13:46:50.534Z"}
+{"level":"info","message":"Database initialized successfully","service":"whatsapp-bot","timestamp":"2025-09-26T13:46:50.534Z"}
+{"level":"info","message":"Queue system initialized successfully","service":"whatsapp-bot","timestamp":"2025-09-26T13:46:50.535Z"}
+{"level":"info","message":"AI system initialized successfully","service":"whatsapp-bot","timestamp":"2025-09-26T13:46:50.550Z"}
+{"level":"info","message":"WhatsApp bot initialized (mock mode for serverless)","service":"whatsapp-bot","timestamp":"2025-09-26T13:46:50.550Z"}

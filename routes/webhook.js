@@ -174,3 +174,6 @@ async function sendWebhook(url, data, secret = null) {
 
 // Export webhook sender function
 export { sendWebhook };
+
+// Export router as default
+export default router;

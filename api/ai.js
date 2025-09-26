@@ -11,15 +11,17 @@ export async function initAI() {
     logger.info('AI system initialized successfully');
     return zai;
   } catch (error) {
-    logger.error('Failed to initialize AI:', error);
-    throw error;
+    logger.warn('AI initialization failed (running without AI features):', error.message);
+    // Don't throw error - allow app to continue without AI features
+    zai = null;
+    return null;
   }
 }
 
 // Get AI instance
 export function getAI() {
   if (!zai) {
-    throw new Error('AI not initialized');
+    throw new Error('AI not initialized - please configure AI settings');
   }
   return zai;
 }

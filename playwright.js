@@ -1,4 +1,32 @@
-    mediaUrl,
+    // WhatsApp automation module for production (Local development)
+import { chromium } from 'playwright';
+import { logger } from './utils/logger.js';
+import { v4 as uuidv4 } from 'uuid';
+import { saveMessage, saveSession, updateSessionStatus } from './db.js';
+
+// Browser and page instances
+let browser = null;
+let context = null; 
+let page = null;
+let reconnectAttempts = 0;
+
+// Message handlers
+let messageHandlers = [];
+
+// Parse raw message data
+export function parseMessageData(rawData) {
+  try {
+    const { 
+      id,
+      chatId,
+      chatName,
+      senderId,
+      senderName,
+      messageType,
+      content,
+      timestamp,
+      isFromMe,
+      mediaUrl,
       mediaType,
       mediaSize,
       thumbnailUrl,

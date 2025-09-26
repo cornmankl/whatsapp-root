@@ -10,3 +10,14 @@
 {"level":"info","message":"Queue system initialized successfully","service":"whatsapp-bot","timestamp":"2025-09-26T13:46:50.535Z"}
 {"level":"info","message":"AI system initialized successfully","service":"whatsapp-bot","timestamp":"2025-09-26T13:46:50.550Z"}
 {"level":"info","message":"WhatsApp bot initialized (mock mode for serverless)","service":"whatsapp-bot","timestamp":"2025-09-26T13:46:50.550Z"}
+{"level":"info","message":"Using in-memory storage (demo mode)","service":"whatsapp-bot","timestamp":"2025-09-26T14:31:00.517Z"}
+{"level":"info","message":"Database tables created successfully","service":"whatsapp-bot","timestamp":"2025-09-26T14:31:00.519Z"}
+{"level":"info","message":"Database initialized successfully","service":"whatsapp-bot","timestamp":"2025-09-26T14:31:00.519Z"}
+{"level":"info","message":"Queue system initialized successfully","service":"whatsapp-bot","timestamp":"2025-09-26T14:31:00.520Z"}
+{"level":"error","message":"Failed to initialize AI: Configuration file not found or invalid. Please create .z-ai-config in your project, home directory, or /etc.","service":"whatsapp-bot","stack":"Error: Configuration file not found or invalid. Please create .z-ai-config in your project, home directory, or /etc.\n    at loadConfig (file:///home/runner/work/whatsapp-root/whatsapp-root/node_modules/z-ai-web-dev-sdk/dist/index.js:27:11)\n    at async ZAI.create (file:///home/runner/work/whatsapp-root/whatsapp-root/node_modules/z-ai-web-dev-sdk/dist/index.js:47:24)\n    at async initAI (file:///home/runner/work/whatsapp-root/whatsapp-root/api/ai.js:10:11)\n    at async initializeSystems (file:///home/runner/work/whatsapp-root/whatsapp-root/api/index.js:99:5)\n    at async Module.handler (file:///home/runner/work/whatsapp-root/whatsapp-root/api/index.js:119:7)\n    at async [eval]:28:5","timestamp":"2025-09-26T14:31:00.528Z"}
+{"level":"info","message":"Using in-memory storage (demo mode)","service":"whatsapp-bot","timestamp":"2025-09-26T14:31:35.984Z"}
+{"level":"info","message":"Database tables created successfully","service":"whatsapp-bot","timestamp":"2025-09-26T14:31:35.987Z"}
+{"level":"info","message":"Database initialized successfully","service":"whatsapp-bot","timestamp":"2025-09-26T14:31:35.987Z"}
+{"level":"info","message":"Queue system initialized successfully","service":"whatsapp-bot","timestamp":"2025-09-26T14:31:35.988Z"}
+{"level":"warn","message":"AI initialization failed (running without AI features):","service":"whatsapp-bot","timestamp":"2025-09-26T14:31:35.998Z"}
+{"level":"info","message":"WhatsApp bot initialized (mock mode for serverless)","service":"whatsapp-bot","timestamp":"2025-09-26T14:31:35.999Z"}

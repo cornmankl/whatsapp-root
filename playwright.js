@@ -9,9 +9,63 @@ let browser = null;
 let context = null; 
 let page = null;
 let reconnectAttempts = 0;
+let isInitialized = false;
 
 // Message handlers
 let messageHandlers = [];
+
+// Initialize WhatsApp bot
+export async function initWhatsAppBot() {
+  try {
+    if (isInitialized) {
+      logger.info('WhatsApp bot already initialized');
+      return true;
+    }
+
+    logger.info('Initializing WhatsApp bot...');
+    
+    // Launch browser
+    browser = await chromium.launch({
+      headless: process.env.NODE_ENV === 'production',
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--disable-gpu'
+      ]
+    });
+
+    // Create context
+    context = await browser.newContext({
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'
+    });
+
+    // Create page
+    page = await context.newPage();
+    
+    // Navigate to WhatsApp Web
+    await page.goto('https://web.whatsapp.com');
+    
+    isInitialized = true;
+    logger.info('WhatsApp bot initialized successfully');
+    
+    return true;
+  } catch (error) {
+    logger.error('Failed to initialize WhatsApp bot:', error);
+    isInitialized = false;
+    
+    // Cleanup on failure
+    if (browser) {
+      await browser.close().catch(() => {});
+    }
+    
+    // Don't throw error - allow app to continue without WhatsApp features
+    return false;
+  }
+}
 
 // Parse raw message data
 export function parseMessageData(rawData) {

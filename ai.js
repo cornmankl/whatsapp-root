@@ -1,5 +1,5 @@
 // GLM-4.5 AI Integration
-import { ZAI } from 'z-ai-web-dev-sdk';
+import ZAI from 'z-ai-web-dev-sdk';
 import { logger } from './utils/logger.js';
 
 // AI configuration
@@ -23,7 +23,7 @@ let zai = null;
 export async function initAI() {
   try {
     if (!AI_CONFIG.enabled) {
-      logger.info('Sistem AI dinonaktifkan');
+      logger.info('AI system disabled');
       return true;
     }
 
@@ -35,21 +35,23 @@ export async function initAI() {
       messages: [
         {
           role: 'system',
-          content: 'Anda adalah asisten yang membantu.'
+          content: 'You are a helpful assistant.'
         },
         {
           role: 'user',
-          content: 'Halo, apakah Anda berfungsi?'
+          content: 'Hello, are you working?'
         }
       ],
       max_tokens: 10
     });
 
-    logger.info('Sistem AI diinisialisasi dengan sukses');
+    logger.info('AI system initialized successfully');
     return true;
   } catch (error) {
-    logger.error('Gagal menginisialisasi sistem AI:', error);
+    logger.warn('AI initialization failed (running without AI features):', error.message);
+    // Don't throw error - allow app to continue without AI features
     AI_CONFIG.enabled = false;
+    zai = null;
     return false;
   }
 }

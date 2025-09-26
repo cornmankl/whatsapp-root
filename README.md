@@ -266,6 +266,44 @@ curl -X POST http://localhost:3000/api/webhook/register \
 
 ### Production Deployment
 
+#### Vercel Serverless Deployment (Recommended)
+
+The application can be deployed to Vercel as a serverless function:
+
+1. **Install Vercel CLI**
+   ```bash
+   npm install -g vercel
+   ```
+
+2. **Deploy to Vercel**
+   ```bash
+   vercel
+   ```
+
+3. **Configure Environment Variables**
+   - `JWT_SECRET`: Your JWT secret key
+   - `POSTGRES_URL`: Vercel PostgreSQL URL (optional)
+   - `NODE_ENV`: `production`
+
+4. **Access the Application**
+   - API: `https://your-app.vercel.app/api`
+   - Health Check: `https://your-app.vercel.app/api/health`
+
+**Features:**
+- ✅ Serverless architecture with automatic scaling
+- ✅ In-memory storage for demo mode
+- ✅ PostgreSQL support for production
+- ✅ Complete API with authentication
+- ✅ GLM-4.5 AI integration
+- ✅ Mock WhatsApp automation for serverless compatibility
+
+**Limitations:**
+- ❌ Real WhatsApp connection not available in serverless
+- ❌ Browser automation (Playwright) not supported
+- ❌ Persistent state only with external database
+
+For detailed Vercel deployment instructions, see [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md).
+
 #### Using Docker
 ```bash
 # Build and start

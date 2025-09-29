@@ -1,4 +1,177 @@
-    mediaUrl,
+// WhatsApp automation module using Playwright
+import { chromium } from 'playwright';
+import { v4 as uuidv4 } from 'uuid';
+import { logger } from './utils/logger.js';
+import { saveMessage, updateSessionStatus, getWebhooks } from './db.js';
+import { sendWebhook } from './utils/webhook.js';
+
+// Global variables
+let browser = null;
+let context = null;
+let page = null;
+let isInitialized = false;
+let messageHandlers = [];
+let reconnectAttempts = 0;
+
+// Initialize WhatsApp bot
+export async function initWhatsAppBot() {
+  try {
+    logger.info('Initializing WhatsApp bot...');
+    
+    // Launch browser
+    browser = await chromium.launch({
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process',
+        '--disable-gpu'
+      ]
+    });
+
+    // Create persistent context
+    context = await browser.newContext({
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      viewport: { width: 1280, height: 720 }
+    });
+
+    // Create page
+    page = await context.newPage();
+    
+    // Setup event listeners
+    setupPageEventListeners();
+    
+    // Navigate to WhatsApp Web
+    await page.goto('https://web.whatsapp.com', { 
+      waitUntil: 'networkidle',
+      timeout: 30000 
+    });
+
+    // Wait for page to load
+    await page.waitForTimeout(3000);
+
+    isInitialized = true;
+    reconnectAttempts = 0;
+    
+    // Save initial session
+    await updateSessionStatus('main', 'waiting_for_qr');
+    
+    // Start monitoring messages
+    await monitorMessages();
+    
+    logger.info('WhatsApp bot initialized successfully');
+    return true;
+  } catch (error) {
+    logger.error('Failed to initialize WhatsApp bot:', error);
+    throw error;
+  }
+}
+
+// Monitor for incoming messages
+async function monitorMessages() {
+  try {
+    if (!page) return;
+
+    // Set up message monitoring using page evaluation
+    await page.evaluate(() => {
+      const messageObserver = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.type === 'childList') {
+            const newMessages = mutation.target.querySelectorAll('[data-testid="msg-container"]');
+            newMessages.forEach((msg) => {
+              if (!msg.dataset.processed) {
+                msg.dataset.processed = 'true';
+                
+                // Extract message data
+                const messageData = extractMessageData(msg);
+                
+                // Send to background script
+                window.postMessage({
+                  type: 'NEW_MESSAGE',
+                  data: messageData
+                }, '*');
+              }
+            });
+          }
+        });
+      });
+
+      // Start observing messages container
+      const messagesContainer = document.querySelector('[data-testid="conversation-panel-messages"]');
+      if (messagesContainer) {
+        messageObserver.observe(messagesContainer, {
+          childList: true,
+          subtree: true
+        });
+      }
+    });
+
+    // Listen for messages from page
+    page.on('console', async (msg) => {
+      if (msg.type() === 'log' && msg.text().includes('NEW_MESSAGE:')) {
+        try {
+          const messageData = JSON.parse(msg.text().replace('NEW_MESSAGE:', ''));
+          await handleNewMessage(messageData);
+        } catch (error) {
+          logger.error('Failed to parse message data:', error);
+        }
+      }
+    });
+
+    logger.info('Message monitoring started');
+  } catch (error) {
+    logger.error('Failed to start message monitoring:', error);
+  }
+}
+
+// Handle new message
+async function handleNewMessage(rawData) {
+  try {
+    const message = parseMessageData(rawData);
+    
+    // Save to database
+    await saveMessage(message);
+    
+    // Trigger webhooks
+    await triggerWebhooks(message);
+    
+    // Process with AI if enabled
+    if (process.env.AI_ENABLED === 'true') {
+      await processWithAI(message);
+    }
+    
+    // Call registered handlers
+    messageHandlers.forEach(handler => {
+      try {
+        handler(message);
+      } catch (error) {
+        logger.error('Message handler error:', error);
+      }
+    });
+    
+    logger.info(`New message processed: ${message.messageId}`);
+  } catch (error) {
+    logger.error('Failed to handle new message:', error);
+  }
+}
+
+// Parse message data
+function parseMessageData(rawData) {
+  try {
+    const {
+      id,
+      chatId,
+      chatName,
+      senderName,
+      timestamp,
+      content,
+      messageType,
+      isFromMe,
+      mediaUrl,
       mediaType,
       mediaSize,
       thumbnailUrl,

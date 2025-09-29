@@ -8,8 +8,15 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "security:audit": "npm audit",
+    "security:fix": "npm audit fix",
+    "prepare": "mkdir -p storage logs uploads && touch storage/.gitkeep logs/.gitkeep uploads/.gitkeep"
   },
   "keywords": [
     "whatsapp",
@@ -23,7 +30,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@vercel/postgres": "^0.5.1",
+    "@vercel/postgres": "^0.10.0",
     "bullmq": "^4.15.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",

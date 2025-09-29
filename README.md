@@ -4,7 +4,7 @@
 
 A production-ready WhatsApp automation bot system with API-like features powered by Playwright automation of WhatsApp Web.
 
-## Features
+## 🚀 Features
 
 ### Core Functionality
 - **WhatsApp Web Automation**: Powered by Playwright for reliable browser automation
@@ -23,11 +23,339 @@ A production-ready WhatsApp automation bot system with API-like features powered
 - **Database**: SQLite persistence with optional MongoDB support
 - **Docker Support**: Containerized deployment with Docker Compose
 
-## Technology Stack
+## 🛠 Technology Stack
 
 - **Backend**: Node.js 18+ with ES modules
 - **Framework**: Express.js
 - **Automation**: Playwright with Chromium
+- **Database**: SQLite (primary), MongoDB (optional)
+- **Queue**: BullMQ with Redis
+- **AI**: Z-AI SDK (GLM-4.5) or custom LLM integration
+- **Frontend**: Vanilla JS with Tailwind CSS
+- **Authentication**: JWT with bcrypt
+- **Testing**: Jest with comprehensive test coverage
+
+## 📦 Installation
+
+### Prerequisites
+- Node.js 18 or higher
+- Redis server (for queue system)
+- Git
+
+### Quick Start
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/cornmankl/whatsapp-root.git
+   cd whatsapp-root
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Setup environment**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
+
+4. **Create required directories**
+   ```bash
+   npm run prepare
+   ```
+
+5. **Start the application**
+   ```bash
+   # Development mode
+   npm run dev
+   
+   # Production mode
+   npm start
+   ```
+
+6. **Access the dashboard**
+   Open `http://localhost:3000/dashboard` in your browser
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+Create a `.env` file based on `.env.example`:
+
+```env
+# Application Settings
+NODE_ENV=development
+PORT=3000
+LOG_LEVEL=info
+
+# Database Configuration
+DB_PATH=./storage/database.sqlite
+
+# Redis Configuration (for queue system)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+
+# Authentication
+JWT_SECRET=your-super-secret-jwt-key-here
+JWT_EXPIRES_IN=7d
+
+# Rate Limiting
+RATE_LIMIT_WINDOW_MS=60000
+RATE_LIMIT_MAX_REQUESTS=100
+
+# AI Configuration
+AI_ENABLED=true
+AI_API_KEY=your-ai-api-key-here
+AI_MAX_TOKENS=150
+AI_TEMPERATURE=0.7
+
+# Webhook Configuration
+WEBHOOK_ENABLED=false
+WEBHOOK_SECRET=your-webhook-secret
+```
+
+## 🧪 Testing
+
+Run the comprehensive test suite:
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test:coverage
+```
+
+## 🔧 Development
+
+### Code Quality
+
+```bash
+# Lint code
+npm run lint
+
+# Fix linting issues
+npm run lint:fix
+
+# Format code
+npm run format
+
+# Check formatting
+npm run format:check
+```
+
+### Security
+
+```bash
+# Audit dependencies
+npm run security:audit
+
+# Fix security vulnerabilities
+npm run security:fix
+```
+
+## 🏗 Architecture
+
+### Project Structure
+```
+whatsapp-root/
+├── api/                    # Vercel serverless functions
+├── middleware/             # Express middleware
+├── routes/                 # API route handlers
+├── utils/                  # Utility functions
+├── public/                 # Web dashboard files
+├── storage/                # Database and file storage
+├── logs/                   # Application logs
+├── __tests__/              # Test files
+├── playwright.js           # WhatsApp automation logic
+├── queue.js               # Message queue system
+├── db.js                  # Database operations
+├── ai.js                  # AI integration
+└── index.js               # Main application entry
+```
+
+### Key Modules
+
+1. **WhatsApp Automation** (`playwright.js`)
+   - Browser automation with Playwright
+   - Message monitoring and parsing
+   - Session management
+   - Auto-reconnection logic
+
+2. **Queue System** (`queue.js`)
+   - BullMQ-based message queue
+   - Rate limiting and throttling
+   - Retry mechanisms
+   - Job processing
+
+3. **Database Layer** (`db.js`)
+   - SQLite operations
+   - Message persistence
+   - Session management
+   - Template storage
+
+4. **AI Integration** (`ai.js`)
+   - GLM-4.5 API integration
+   - Context-aware responses
+   - Configurable AI behavior
+
+## 📊 API Documentation
+
+### Authentication
+All API endpoints require authentication via JWT token:
+
+```bash
+Authorization: Bearer <your-jwt-token>
+```
+
+### Core Endpoints
+
+#### Send Message
+```http
+POST /api/whatsapp/send
+Content-Type: application/json
+
+{
+  "recipient": "+1234567890",
+  "content": "Hello, World!",
+  "mediaUrl": "optional-media-url",
+  "mediaType": "image|video|document"
+}
+```
+
+#### Get Messages
+```http
+GET /api/messages?page=1&limit=50
+```
+
+#### Webhook Management
+```http
+POST /api/webhook
+Content-Type: application/json
+
+{
+  "url": "https://your-server.com/webhook",
+  "events": ["message.new", "message.sent"],
+  "secret": "webhook-secret"
+}
+```
+
+## 🔒 Security Features
+
+### Input Validation
+- Comprehensive input sanitization
+- Phone number validation
+- File type and size restrictions
+- XSS protection
+
+### Authentication & Authorization
+- JWT-based authentication
+- API key validation
+- Rate limiting per IP
+- CORS configuration
+
+### Error Handling
+- Structured error responses
+- Security-focused error messages
+- Comprehensive logging
+- Stack trace filtering
+
+## 🚀 Deployment
+
+### Docker Deployment
+```bash
+# Build and run with Docker Compose
+docker-compose up -d
+```
+
+### Vercel Deployment
+The project includes Vercel-specific configurations in the `api/` directory for serverless deployment.
+
+### Production Checklist
+- [ ] Set secure JWT secret
+- [ ] Configure proper CORS origins
+- [ ] Set up SSL/TLS certificates
+- [ ] Configure Redis for production
+- [ ] Set up log rotation
+- [ ] Configure backup strategy
+- [ ] Set up monitoring and alerts
+
+## 🔍 Monitoring & Logging
+
+### Logging Levels
+- `error`: Critical errors requiring immediate attention
+- `warn`: Warning conditions
+- `info`: General informational messages
+- `debug`: Detailed debugging information
+
+### Log Files
+- `logs/app.log`: General application logs
+- `logs/error.log`: Error-specific logs
+- Console output with colored formatting
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Code Standards
+- Follow existing code style
+- Add tests for new features
+- Update documentation
+- Ensure all tests pass
+- Follow security best practices
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## ⚠️ Disclaimer
+
+This software is provided for educational purposes only. Using this software to automate WhatsApp may violate WhatsApp's Terms of Service and could result in account restrictions or bans. Use at your own risk and responsibility.
+
+## 🆘 Support
+
+For support, please:
+1. Check the documentation
+2. Search existing issues
+3. Create a new issue with detailed information
+4. Follow the issue template
+
+## 🏆 Recent Improvements
+
+### Security & Code Quality
+- ✅ Fixed critical syntax errors in `playwright.js`
+- ✅ Resolved security vulnerabilities (updated @vercel/postgres)
+- ✅ Consolidated duplicate error handlers
+- ✅ Added comprehensive input validation utilities
+- ✅ Enhanced error handling with structured responses
+
+### Testing & Development
+- ✅ Added Jest testing framework with ES module support
+- ✅ Created comprehensive test suite for utilities
+- ✅ Added code coverage reporting
+- ✅ Improved development scripts and workflows
+
+### Documentation & Setup
+- ✅ Created detailed environment configuration template
+- ✅ Enhanced README with comprehensive setup instructions
+- ✅ Added proper `.gitignore` for security and cleanup
+- ✅ Created webhook utility functions
+
+### Architecture Improvements
+- ✅ Standardized import/export patterns
+- ✅ Enhanced logging with structured metadata
+- ✅ Improved package.json scripts for better DX
+- ✅ Added proper TypeScript configuration
 - **Queue**: BullMQ with Redis
 - **Database**: SQLite (default) / MongoDB (optional)
 - **AI**: GLM-4.5 / Ollama (local LLM)
